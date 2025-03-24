@@ -77,7 +77,7 @@ if __name__ == '__main__':
     ckpt = torch.load(config.model.checkpoint , map_location=args.device)
     model = FragmentGeneration(ckpt['config'].model, protein_atom_feature_dim, \
                                 ligand_atom_feature_dim, frag_atom_feature_dim=45, num_edge_types=5,\
-                                num_classes=frag_base['data_base_smiles'].shape[0], pos_pred_type=ckpt['config'].model.pos_pred_type).to(args.device)
+                                num_classes=frag_base['data_base_smiles'].shape[0], pos_pred_type=ckpt['config'].model.pos_pred_type, num_classes=config.data.num_classes).to(args.device)
     
     print('Num of parameters is {0:.4}M'.format(np.sum([p.numel() for p in model.parameters()]) /100000 ))
     model.load_state_dict(ckpt['model'])
