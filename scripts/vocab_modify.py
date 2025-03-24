@@ -1,9 +1,11 @@
+import sys
+sys.path.append('/home/wqh/FragGen')
 from utils.chem import write_pkl, read_pkl
 from rdkit import Chem
 import pandas as pd
 from utils.featurizer import getNodeFeatures
 
-atom_frag_database = read_pkl('./mols/crossdock/CrossDock_AtomFragment_database.pkl')
+atom_frag_database = read_pkl('CrossDock_AtomFragment_database.pkl')
 atomTypes = ['C', 'N', 'O', 'F', 'P', 'S', 'Cl', 'Br']
 # atomic_numbers = [6, 7, 8, 9, 15, 16, 17, 35]
 atom_mols = [Chem.MolFromSmiles(atom) for atom in atomTypes]
@@ -22,4 +24,4 @@ data_base = pd.DataFrame({
     'is_fragment': is_fragment
 })
 
-write_pkl(data_base,'./data/fragment_base.pkl')
+write_pkl(data_base,'./data/fragment_base_crossdocked2020.pkl')

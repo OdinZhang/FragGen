@@ -6,7 +6,7 @@ import sys
 # sys.path.append('/home/haotian/Molecule_Generation/MG/Flex-SBDD')
 from tqdm import tqdm
 from utils.dataset import merge_protein_ligand_dicts, torchify_dict
-from utils.featurizer import featurize_mol, parse_rdmol
+from utils.featurizer import featurize_mol, parse_rdmol, read_ply
 from utils.cluster import FragCluster, terminal_reset
 from utils.frag import query_clique
 from utils.chem import read_sdf, read_pkl
@@ -14,7 +14,7 @@ import argparse
 import torch
 import numpy as np
 from torch_geometric.transforms import Compose
-from utils.transform import FeaturizeProteinAtom, FeaturizeLigandAtom, LigandBFSMask, FullMask, ComplexBuilder, PosPredMaker
+from utils.transform import FeaturizeProteinAtom, FeaturizeLigandAtom, LigandBFSMask, FullMask, ComplexBuilder, PosPredMaker, LigandCountNeighbors, FeaturizeLigandBond, FeaturizeProteinSurface
 from rdkit import Chem
 
 if __name__ == '__main__':
@@ -56,7 +56,8 @@ if __name__ == '__main__':
         for i, (pocket_fn, ligand_fn, _, rmsd_str) in enumerate(tqdm(index)):
             if pocket_fn is None: continue
             try:
-                pocket_dict = PDBProtein(osp.join(data_base, pocket_fn)).to_dict_atom()
+                #pocket_dict = PDBProtein(osp.join(data_base, pocket_fn)).to_dict_atom()
+                pocket_dict = read_ply(pocket_fn)
                 mol = read_sdf(osp.join(data_base, ligand_fn))[0]
                 Chem.SanitizeMol(mol)
                 if mol is None:
@@ -109,19 +110,21 @@ if __name__ == '__main__':
     print('saved data {}'.format(len(keys)))
 
     
-    atom_frag_database = read_pkl('./data/fragment_base.pkl')
+    atom_frag_database = read_pkl(args.frag_base)
     frag_base = {
         'data_base_features': np.concatenate(atom_frag_database['atom_features'], axis = 0).reshape((len(atom_frag_database), -1)),
         'data_base_smiles': np.string_(atom_frag_database.smiles)
     }
-    protein_featurizer = FeaturizeProteinAtom()
+    protein_featurizer = FeaturizeProteinSurface() #FeaturizeProteinAtom()
     ligand_featurizer = FeaturizeLigandAtom()
 
     # choose one of the masker
-    masker = LigandBFSMask(frag_base)
+    masker = LigandBFSMask(frag_base=frag_base)
     # masker = FullMask(frag_base)
 
     transform = Compose([
+        LigandCountNeighbors(),
+        FeaturizeLigandBond(),
         protein_featurizer,
         ligand_featurizer,
         masker,
@@ -131,11 +134,11 @@ if __name__ == '__main__':
 
     name2id = {}
     for i in tqdm(range(len(keys))):
-        try:
-            data = transform(pickle.loads(db.begin().get(keys[i])))
-        except Exception as e:
-            print(i, e)
-            continue
+        #try:
+        data = transform(pickle.loads(db.begin().get(keys[i])))
+        #except Exception as e:
+        #    print(i, e)
+        #    continue
         name = (data['protein_filename'], data['ligand_filename'])
         name2id[name] = i
     torch.save(name2id, args.name2id_path)

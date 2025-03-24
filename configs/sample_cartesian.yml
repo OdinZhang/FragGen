@@ -4,6 +4,7 @@ data:
     name: pl
     path: ./data/crossdocked_pocket10
     split: ./data/split_by_name.pt
+  num_classes: 1136
 
 model:
     pos_pred_type: cartesian
