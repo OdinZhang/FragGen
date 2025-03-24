@@ -7,7 +7,7 @@ data:
 
 model:
     pos_pred_type: dihedral
-    checkpoint: ./ckpt/freq0_val_90.pt # ./ckpt/freq0_val_7.pt
+    checkpoint: ./ckpt/dihedral_208.pt # ./ckpt/freq0_val_7.pt
 
 sample:
   seed: 2020

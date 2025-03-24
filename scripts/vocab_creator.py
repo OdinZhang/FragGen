@@ -189,7 +189,7 @@ def get_fragment_smiles(mol, ring_fragment):
     
     smiles_mol = rdkit.Chem.MolFromSmiles(smiles)
     if not smiles_mol:
-        logger(f'failed to extract fragment smiles: {smiles}, {ring_fragment}')
+        print(f'failed to extract fragment smiles: {smiles}, {ring_fragment}')
 
         return None
 
@@ -239,24 +239,24 @@ def cananical(mol):
 
 def translate_node_features(feat):
     n = 0
-    atom_type = atomTypes[np.argmax(feat[0:len(atomTypes)+1])]
-    n += len(atomTypes) + 1
-    formal_charge = formalCharge[np.argmax(feat[n: n + len(formalCharge)+1])]
-    n += len(formalCharge) + 1
+    atom_type = atomTypes[np.argmax(feat[0:len(atomTypes)])]
+    n += len(atomTypes)
+    formal_charge = formalCharge[np.argmax(feat[n: n + len(formalCharge)])]
+    n += len(formalCharge)
     #hybrid = hybridization[np.argmax(feat[n: n + len(hybridization) + 1])]
     #n += len(hybridization) + 1
     aromatic = feat[n]
     n += 1
     mass = feat[n]
     n += 1
-    n_single = num_single_bonds[np.argmax(feat[n: n + len(num_single_bonds) + 1])]
-    n += len(num_single_bonds) + 1
-    n_double = num_double_bonds[np.argmax(feat[n: n + len(num_double_bonds) + 1])]
-    n += len(num_double_bonds) + 1
-    n_triple = num_triple_bonds[np.argmax(feat[n: n + len(num_triple_bonds) + 1])]
-    n += len(num_triple_bonds) + 1
-    n_aromatic = num_aromatic_bonds[np.argmax(feat[n: n + len(num_aromatic_bonds) + 1])]
-    n += len(num_aromatic_bonds) + 1
+    n_single = num_single_bonds[np.argmax(feat[n: n + len(num_single_bonds)])]
+    n += len(num_single_bonds)
+    n_double = num_double_bonds[np.argmax(feat[n: n + len(num_double_bonds)])]
+    n += len(num_double_bonds)
+    n_triple = num_triple_bonds[np.argmax(feat[n: n + len(num_triple_bonds)])]
+    n += len(num_triple_bonds)
+    n_aromatic = num_aromatic_bonds[np.argmax(feat[n: n + len(num_aromatic_bonds)])]
+    n += len(num_aromatic_bonds)
     
     return atom_type, formal_charge, aromatic, mass * 100, n_single, n_double, n_triple, n_aromatic
 

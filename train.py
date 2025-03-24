@@ -15,7 +15,7 @@ from utils.pdb_parser import PDBProtein
 from torch_geometric.transforms import Compose
 
 from utils.transform import FeaturizeProteinAtom, FeaturizeLigandAtom, \
-    LigandBFSMask, FullMask, ComplexBuilder, PosPredMaker, LigandCountNeighbors, FeaturizeLigandBond, MixMasker
+    LigandBFSMask, FullMask, ComplexBuilder, PosPredMaker, LigandCountNeighbors, FeaturizeLigandBond, MixMasker, FeaturizeProteinSurface
 from utils.dataset import merge_protein_ligand_dicts, torchify_dict
 from utils.cluster import ring_decompose, get_clique_mol_simple, filter_terminal_seeds,\
      ClusterNode, terminal_reset
@@ -26,6 +26,8 @@ from utils.train import get_model_loss, get_new_log_dir, get_logger, get_optimiz
 from models.IDGaF import FragmentGeneration
 from time import time
 from torch.utils.data import Subset
+import utils.data
+from utils.data import ProteinLigandData, SurfLigandPairDataset
 
 # define the config
 import argparse
@@ -36,7 +38,7 @@ if __name__ == '__main__':
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--logdir', type=str, default='./logs')
     parser.add_argument('--split', type=str, default='./data/split_by_name.pt')
-    parser.add_argument('--batch_size', type=int, default=4)
+    parser.add_argument('--batch_size', type=int, default=2)
     args = parser.parse_args()
 
     # construct the config
@@ -55,13 +57,13 @@ if __name__ == '__main__':
     shutil.copytree('./models', os.path.join(log_dir, 'models'))
 
     # atom_frag_database = read_pkl('./mols/crossdock/CrossDock_AtomFragment_database.pkl')
-    atom_frag_database = read_pkl('./data/fragment_base.pkl')
+    atom_frag_database = read_pkl('/home/wqh/FragGen/data/fragment_base_0.pkl')
     frag_base = {
         'data_base_features': np.concatenate(atom_frag_database['atom_features'], axis = 0).reshape((len(atom_frag_database), -1)),
         'data_base_smiles': np.string_(atom_frag_database.smiles)
     }
 
-    protein_featurizer = FeaturizeProteinAtom()
+    protein_featurizer = FeaturizeProteinSurface() #FeaturizeProteinAtom()
     ligand_featurizer = FeaturizeLigandAtom()
     # masker = FullMask(frag_base)
     # choose one
@@ -77,12 +79,12 @@ if __name__ == '__main__':
         PosPredMaker()
     ])
 
-    dataset = ProteinLigandLMDB('./data/crossdock_processed_fraggen.lmdb', './data/name2id.pt', transform=transform)
+    dataset = ProteinLigandLMDB(config.dataset.lmdb_path, config.dataset.name2id_path, transform=transform)
 
     protein_atom_feature_dim = protein_featurizer.feature_dim
     ligand_atom_feature_dim = ligand_featurizer.feature_dim
     model = FragmentGeneration(config_model, protein_atom_feature_dim, \
-                            ligand_atom_feature_dim, frag_atom_feature_dim=45, num_edge_types=5).to(args.device)
+                            ligand_atom_feature_dim, frag_atom_feature_dim=45, num_edge_types=5, num_classes=config.dataset.num_classes).to(args.device)
 
     # split the train and val
     split_by_name = torch.load(args.split)
@@ -162,6 +164,7 @@ if __name__ == '__main__':
             epoch_start = time()
             batch_losses = []
             batch_cnt = 0
+            error = 0
 
             for batch in train_loader:
                 batch_cnt+=1
